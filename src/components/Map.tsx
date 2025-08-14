@@ -22,9 +22,7 @@ function Map() {
         center: center,
         zoom: zoom,
       });
-    }
 
-    if (mapRef.current) {
       mapRef.current.on("move", () => {
         // get the current center coordinates and zoom level from the map
         const mapCenter = mapRef.current!.getCenter();
@@ -43,18 +41,43 @@ function Map() {
     };
   }, []);
 
+  const handleReset = () => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        // this is where i can pipe coordinates from external sources
+        center: INITIAL_COORDS,
+        zoom: INITIAL_ZOOM,
+      });
+    }
+  };
+
+  const handleBatman = () => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [41.1309, 37.8814],
+        zoom: 11.5,
+      });
+    }
+  };
+
   return (
-    <>
+    <div className="relative">
       <div id="coords">
         Longitude: {center[0].toFixed(4)} | Latitude: {center[1].toFixed(4)} |
         Zoom: {zoom.toFixed(2)}
       </div>
+      <button className="place-btn-1" onClick={handleReset}>
+        Banana
+      </button>
+      <button className="place-btn-2" onClick={handleBatman}>
+        Batman
+      </button>
       <div
         id="map-container"
         ref={mapContainerRef}
         className="h-96 w-full rounded-lg"
       />
-    </>
+    </div>
   );
 }
 

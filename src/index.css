@@ -23,10 +23,17 @@
 }
 
 #map-container {
-  @apply h-full w-full;
-  min-height: 400px; /* Fallback height */
+  @apply min-h-full w-full;
 }
 
 #coords {
-  @apply *:text-sm text-gray-700 bg-white p-4 shadow-md rounded-lg;
+  @apply *:text-sm absolute z-10 top-4 left-4 text-gray-700 bg-white p-4 shadow-md rounded-lg;
+}
+
+.place-btn-1 {
+  @apply absolute z-10 top-4 right-4 bg-white text-gray-700 p-2 hover:cursor-pointer rounded-lg shadow-md;
+}
+
+.place-btn-2 {
+  @apply absolute z-10 top-16 right-4 bg-white text-gray-700 p-2 hover:cursor-pointer rounded-lg shadow-md;
 }
