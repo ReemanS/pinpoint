@@ -18,7 +18,12 @@ function Map() {
     if (mapContainerRef.current) {
       mapRef.current = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/standard-satellite",
+        style: "mapbox://styles/mapbox/standard",
+        config: {
+          basemap: {
+            lightPreset: "night", // also day, set dark mode condition here too
+          },
+        },
         center: center,
         zoom: zoom,
       });
@@ -66,17 +71,13 @@ function Map() {
         Longitude: {center[0].toFixed(4)} | Latitude: {center[1].toFixed(4)} |
         Zoom: {zoom.toFixed(2)}
       </div>
-      <button className="place-btn-1" onClick={handleReset}>
+      <button className="place-btn-1 btn-secondary" onClick={handleReset}>
         Banana
       </button>
-      <button className="place-btn-2" onClick={handleBatman}>
+      <button className="place-btn-2 btn-secondary" onClick={handleBatman}>
         Batman
       </button>
-      <div
-        id="map-container"
-        ref={mapContainerRef}
-        className="h-96 w-full rounded-lg"
-      />
+      <div id="map-container" ref={mapContainerRef} />
     </div>
   );
 }

@@ -10,11 +10,11 @@
 
 @theme {
   --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  /* --color-text-dark: #eae9fc;
+  --color-text-dark: #eae9fc;
   --color-background-dark: #000005;
   --color-primary-dark: #3feece;
   --color-secondary-dark: #91caee;
-  --color-accent-dark: #b8b2e1; */
+  --color-accent-dark: #b8b2e1;
   --color-text: #040316;
   --color-background: #fafaff;
   --color-primary: #11c0a0;
@@ -23,7 +23,7 @@
 }
 
 #map-container {
-  @apply min-h-full w-full;
+  @apply h-[85vh] w-full rounded-lg;
 }
 
 #coords {
@@ -31,9 +31,13 @@
 }
 
 .place-btn-1 {
-  @apply absolute z-10 top-4 right-4 bg-white text-gray-700 p-2 hover:cursor-pointer rounded-lg shadow-md;
+  @apply absolute z-10 top-4 right-4;
 }
 
 .place-btn-2 {
-  @apply absolute z-10 top-16 right-4 bg-white text-gray-700 p-2 hover:cursor-pointer rounded-lg shadow-md;
+  @apply absolute z-10 top-16 right-4;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white dark:bg-secondary-dark dark:text-text p-2 hover:cursor-pointer rounded-lg shadow-md;
 }
