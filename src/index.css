@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @font-face {
   font-family: "Manrope";
@@ -27,7 +28,7 @@
 }
 
 #coords {
-  @apply *:text-sm absolute z-10 top-4 left-4 text-gray-700 bg-white p-4 shadow-md rounded-lg;
+  @apply *:text-sm absolute z-10 top-4 left-4 text-gray-700 bg-white dark:text-text-dark dark:bg-black p-4 rounded-lg;
 }
 
 .place-btn-1 {

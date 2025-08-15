@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -8,6 +9,7 @@ const INITIAL_ZOOM = 13;
 function Map() {
   const mapRef = useRef<mapboxgl.Map>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
 
   const [center, setCenter] = useState(INITIAL_COORDS);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
@@ -21,11 +23,11 @@ function Map() {
         style: "mapbox://styles/mapbox/standard",
         config: {
           basemap: {
-            lightPreset: "night", // also day, set dark mode condition here too
+            lightPreset: theme === "dark" ? "night" : "day",
           },
         },
-        center: center,
-        zoom: zoom,
+        center: INITIAL_COORDS,
+        zoom: INITIAL_ZOOM,
       });
 
       mapRef.current.on("move", () => {
@@ -42,9 +44,21 @@ function Map() {
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
+        mapRef.current = null;
       }
     };
   }, []);
+
+  // update only the lightPreset when theme changes
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setConfigProperty(
+        "basemap",
+        "lightPreset",
+        theme === "dark" ? "night" : "day"
+      );
+    }
+  }, [theme]);
 
   const handleReset = () => {
     if (mapRef.current) {
