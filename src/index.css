@@ -42,3 +42,26 @@
 .btn-secondary {
   @apply bg-secondary text-white dark:bg-secondary-dark dark:text-text p-2 hover:cursor-pointer rounded-lg shadow-md;
 }
+
+.map-actions-container {
+  @apply absolute z-10 top-4 left-4 p-4 bg-white dark:bg-black rounded-lg shadow-md flex flex-col gap-3 max-w-xs sm:max-w-sm md:max-w-md w-full;
+}
+
+.map-coords {
+  @apply text-sm text-gray-700 dark:text-text-dark;
+}
+
+.map-search-form {
+  @apply flex flex-col sm:flex-row gap-2;
+}
+
+.map-search-input {
+  @apply p-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+         bg-white dark:bg-gray-800 text-gray-700 dark:text-text-dark 
+         flex-grow focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark;
+}
+
+.map-search-button {
+  @apply bg-primary text-white dark:bg-primary-dark dark:text-text 
+         p-2 rounded-lg shadow-md hover:opacity-90 transition-opacity;
+}

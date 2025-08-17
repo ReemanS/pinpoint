@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import MapActions from "./MapActions";
 
 const INITIAL_COORDS: [number, number] = [-157.3637, 1.9827]; // banan
 const INITIAL_ZOOM = 13;
@@ -9,9 +10,10 @@ const INITIAL_ZOOM = 13;
 function Map() {
   const mapRef = useRef<mapboxgl.Map>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+
   const { theme } = useTheme();
 
-  const [center, setCenter] = useState(INITIAL_COORDS);
+  const [center, setCenter] = useState<[number, number]>(INITIAL_COORDS);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
 
   useEffect(() => {
@@ -44,7 +46,6 @@ function Map() {
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
-        mapRef.current = null;
       }
     };
   }, []);
@@ -63,34 +64,15 @@ function Map() {
   const handleReset = () => {
     if (mapRef.current) {
       mapRef.current.flyTo({
-        // this is where i can pipe coordinates from external sources
         center: INITIAL_COORDS,
         zoom: INITIAL_ZOOM,
       });
     }
   };
 
-  const handleBatman = () => {
-    if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [41.1309, 37.8814],
-        zoom: 11.5,
-      });
-    }
-  };
-
   return (
     <div className="relative">
-      <div id="coords">
-        Longitude: {center[0].toFixed(4)} | Latitude: {center[1].toFixed(4)} |
-        Zoom: {zoom.toFixed(2)}
-      </div>
-      <button className="place-btn-1 btn-secondary" onClick={handleReset}>
-        Banana
-      </button>
-      <button className="place-btn-2 btn-secondary" onClick={handleBatman}>
-        Batman
-      </button>
+      <MapActions center={center} zoom={zoom} />
       <div id="map-container" ref={mapContainerRef} />
     </div>
   );
