@@ -61,18 +61,19 @@ function Map() {
     }
   }, [theme]);
 
-  const handleReset = () => {
+  // Function to fly to a specific location
+  const handleFlyTo = (coordinates: [number, number], newZoom?: number) => {
     if (mapRef.current) {
       mapRef.current.flyTo({
-        center: INITIAL_COORDS,
-        zoom: INITIAL_ZOOM,
+        center: coordinates,
+        zoom: newZoom || zoom,
       });
     }
   };
 
   return (
     <div className="relative">
-      <MapActions center={center} zoom={zoom} />
+      <MapActions center={center} zoom={zoom} onFlyTo={handleFlyTo} />
       <div id="map-container" ref={mapContainerRef} />
     </div>
   );
