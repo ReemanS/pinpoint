@@ -1,6 +1,9 @@
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import type { SearchResult } from "../types/search";
+// MapActions: small control panel that shows coords/zoom, a submit-only
+// Mapbox Geocoder input, and a compact reset button. Selecting a result
+// flies the map to that location.
+import { useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { Geocoder } from "@mapbox/search-js-react";
 
 interface MapActionsProps {
   center: [number, number];
@@ -10,95 +13,44 @@ interface MapActionsProps {
 
 function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
   const [searchValue, setSearchValue] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [showResults, setShowResults] = useState<boolean>(false);
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchValue(value);
-    if (value.length < 3) {
-      setSearchResults([]);
-      setShowResults(false);
-    }
-  };
+  // i had to cast Geocoder to any just to make it useable
+  // maybe i'll stick with the raw APIs next time instead of this wrapper
+  const GeocoderAny = Geocoder as any;
+  const geocoderRef = useRef<any>(null);
 
-  // Geocoding v6 forward
-  // i was gonna used the Search Box API but turns out that's for
-  // more complicated queries, not really what I was aiming for
-  const performSearch = async (query: string) => {
+  // Gate to prevent network calls while typing. We only allow the next search
+  // when the user explicitly submits the form.
+  const allowNextSearch = useRef<boolean>(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!geocoderRef.current) return;
+    if (searchValue.trim().length < 3) return;
+    setIsSearching(true);
+    allowNextSearch.current = true;
     try {
-      const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-      const params = new URLSearchParams({
-        q: query,
-        access_token: accessToken,
-        limit: "8",
-        autocomplete: "false",
-        proximity: `${center[0]},${center[1]}`,
-      });
-      const url = `https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const data = await response.json();
-
-      if (data.features && Array.isArray(data.features)) {
-        const results: SearchResult[] = data.features.map((feature: any) => {
-          const id: string = feature.id || feature.properties?.mapbox_id;
-          const name: string = feature.properties?.name ?? "Unnamed";
-          const coords: [number, number] = Array.isArray(
-            feature.geometry?.coordinates
-          )
-            ? [feature.geometry.coordinates[0], feature.geometry.coordinates[1]]
-            : [
-                feature?.properties?.coordinates?.longitude,
-                feature?.properties?.coordinates?.latitude,
-              ];
-          const place_formatted: string | undefined =
-            feature.properties?.place_formatted;
-          const full_address: string | undefined =
-            feature.properties?.full_address;
-
-          return {
-            id,
-            name,
-            coordinates: coords,
-            place_formatted,
-            full_address,
-          };
-        });
-
-        setSearchResults(results);
-        if (results.length > 0) {
-          setShowResults(true);
-        }
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSearchResults([]);
+      geocoderRef.current.search(searchValue);
     } finally {
+      allowNextSearch.current = false;
       setIsSearching(false);
     }
   };
 
-  // Handle search form submission
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (searchValue.length >= 3) {
-      setIsSearching(true);
-      performSearch(searchValue);
+  // fly to the selected feature
+  const handleRetrieve = (feature: any) => {
+    const coords = feature?.geometry?.coordinates;
+    if (Array.isArray(coords) && coords.length >= 2) {
+      const [lng, lat] = coords as [number, number];
+      onFlyTo([lng, lat], 14);
     }
-  };
-
-  // Handle result selection
-  const handleResultSelect = (result: SearchResult) => {
-    const [lng, lat] = result.coordinates;
-    onFlyTo([lng, lat], 14);
-    setShowResults(false);
-    setSearchValue(result.name);
+    const name =
+      feature?.properties?.name ||
+      feature?.properties?.place_formatted ||
+      feature?.properties?.full_address ||
+      "";
+    if (name) setSearchValue(name);
   };
 
   return (
@@ -120,12 +72,28 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
 
       <form onSubmit={handleSubmit} className="map-search-form">
         <div className="map-search-container">
-          <input
-            type="text"
+          {/* Geocoder renders its own popover results. We:
+              - pass the access token
+              - keep the value controlled via onChange
+              - handle onRetrieve to fly the map
+              - use interceptSearch to block keystroke requests; only allow
+                a request for the next submit-triggered search. */}
+          <GeocoderAny
+            ref={geocoderRef as any}
+            accessToken={import.meta.env.VITE_MAPBOX_TOKEN}
             value={searchValue}
-            onChange={handleSearchChange}
+            onChange={(val: string) => setSearchValue(val)}
+            onRetrieve={handleRetrieve}
+            interceptSearch={(val: string) =>
+              allowNextSearch.current ? val : ""
+            }
             placeholder="Search for a location..."
-            className="map-search-input"
+            options={{
+              limit: 6, // adjust as needed
+              autocomplete: true,
+              // Bias results toward current map center
+              proximity: { lng: center[0], lat: center[1] },
+            }}
           />
           <button
             type="submit"
@@ -135,26 +103,7 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
             Search
           </button>
         </div>
-
-        {showResults && searchResults.length > 0 && (
-          <div className="map-search-results">
-            {searchResults.map((result) => (
-              <div
-                key={result.id}
-                className="map-search-result-item"
-                onClick={() => handleResultSelect(result)}
-              >
-                <div className="map-result-name">{result.name}</div>
-                <div className="map-result-address">
-                  {result.place_formatted || result.full_address}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </form>
-
-      {/* Reset moved to top-right in map-topbar */}
     </div>
   );
 }
