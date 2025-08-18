@@ -11,6 +11,10 @@ function Map() {
   const mapRef = useRef<mapboxgl.Map>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
+  const [boundingBoxSource, setBoundingBoxSource] = useState<string | null>(
+    null
+  );
+
   const { theme } = useTheme();
 
   const [center, setCenter] = useState<[number, number]>(INITIAL_COORDS);
@@ -71,9 +75,80 @@ function Map() {
     }
   };
 
+  const handleDisplayBoundingBox = (
+    bbox: [number, number, number, number] | null
+  ) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // remove existing bounding box if any
+    if (boundingBoxSource) {
+      if (map.getLayer("bbox-layer")) {
+        map.removeLayer("bbox-layer");
+      }
+      if (map.getSource(boundingBoxSource)) {
+        map.removeSource(boundingBoxSource);
+      }
+      setBoundingBoxSource(null);
+    }
+
+    if (bbox) {
+      const sourceId = `bbox-source-${Date.now()}`;
+
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [bbox[0], bbox[1]], // bottom left
+                [bbox[2], bbox[1]], // bottom right
+                [bbox[2], bbox[3]], // top right
+                [bbox[0], bbox[3]], // top left
+                [bbox[0], bbox[1]], // close
+              ],
+            ],
+          },
+          properties: {},
+        },
+      });
+
+      // Add a layer to display the bounding box
+      map.addLayer({
+        id: "bbox-layer",
+        type: "line",
+        source: sourceId,
+        layout: {},
+        paint: {
+          "line-color": "#0080ff",
+          "line-width": 2,
+        },
+      });
+
+      setBoundingBoxSource(sourceId);
+
+      map.fitBounds(
+        [
+          [bbox[0], bbox[1]], // SW
+          [bbox[2], bbox[3]], // NE
+        ],
+        {
+          padding: 50,
+        }
+      );
+    }
+  };
+
   return (
     <div className="relative">
-      <MapActions center={center} zoom={zoom} onFlyTo={handleFlyTo} />
+      <MapActions
+        center={center}
+        zoom={zoom}
+        onFlyTo={handleFlyTo}
+        onDisplayBoundingBox={handleDisplayBoundingBox}
+      />
       <div id="map-container" ref={mapContainerRef} />
     </div>
   );

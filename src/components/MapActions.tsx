@@ -6,9 +6,15 @@ interface MapActionsProps {
   center: [number, number];
   zoom: number;
   onFlyTo: (coordinates: [number, number], zoom?: number) => void;
+  onDisplayBoundingBox: (bbox: [number, number, number, number] | null) => void;
 }
 
-function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
+function MapActions({
+  center,
+  zoom,
+  onFlyTo,
+  onDisplayBoundingBox,
+}: MapActionsProps) {
   const [searchValue, setSearchValue] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -35,6 +41,7 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
         limit: "8",
         autocomplete: "false",
         proximity: `${center[0]},${center[1]}`,
+        types: "country,region,postcode,district,place,locality,neighborhood",
       });
       const url = `https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`;
       const response = await fetch(url);
@@ -61,6 +68,12 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
             feature.properties?.place_formatted;
           const full_address: string | undefined =
             feature.properties?.full_address;
+          const feature_type: string | undefined =
+            feature.properties?.feature_type;
+
+          const bbox = feature.properties?.bbox as
+            | [number, number, number, number]
+            | undefined;
 
           return {
             id,
@@ -68,6 +81,8 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
             coordinates: coords,
             place_formatted,
             full_address,
+            bbox,
+            feature_type,
           };
         });
 
@@ -96,7 +111,16 @@ function MapActions({ center, zoom, onFlyTo }: MapActionsProps) {
   // Handle result selection
   const handleResultSelect = (result: SearchResult) => {
     const [lng, lat] = result.coordinates;
-    onFlyTo([lng, lat], 14);
+    if (result.bbox) {
+      // If bbox exists, display it and fit the map to it
+      onDisplayBoundingBox(result.bbox);
+      onFlyTo([lng, lat], 15);
+    } else {
+      // If no bbox, clear any existing one and zoom to point
+      onDisplayBoundingBox(null);
+      onFlyTo([lng, lat], 14);
+    }
+
     setShowResults(false);
     setSearchValue(result.name);
   };
