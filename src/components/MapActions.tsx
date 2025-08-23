@@ -18,7 +18,6 @@ function MapActions({
   onDisplayBoundingBox,
 }: MapActionsProps) {
   const [searchValue, setSearchValue] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [showResults, setShowResults] = useState<boolean>(false);
 
@@ -55,35 +54,56 @@ function MapActions({
       const data = await response.json();
 
       if (data.features && Array.isArray(data.features)) {
-        const results: SearchResult[] = data.features.map((feature: unknown) => {
-          const featureObj = feature as Record<string, unknown>;
-          const properties = featureObj.properties as Record<string, unknown> | undefined;
-          const geometry = featureObj.geometry as Record<string, unknown> | undefined;
-          
-          const id: string = (featureObj.id as string) || (properties?.mapbox_id as string) || "";
-          const name: string = (properties?.name as string) ?? "Unnamed";
-          const coords: [number, number] = Array.isArray(geometry?.coordinates)
-            ? [geometry.coordinates[0] as number, geometry.coordinates[1] as number]
-            : [
-                (properties?.coordinates as Record<string, number>)?.longitude || 0,
-                (properties?.coordinates as Record<string, number>)?.latitude || 0,
-              ];
-          const place_formatted: string | undefined = properties?.place_formatted as string | undefined;
-          const full_address: string | undefined = properties?.full_address as string | undefined;
-          const feature_type: string | undefined = properties?.feature_type as string | undefined;
+        const results: SearchResult[] = data.features.map(
+          (feature: unknown) => {
+            const featureObj = feature as Record<string, unknown>;
+            const properties = featureObj.properties as
+              | Record<string, unknown>
+              | undefined;
+            const geometry = featureObj.geometry as
+              | Record<string, unknown>
+              | undefined;
 
-          const bbox = properties?.bbox as [number, number, number, number] | undefined;
+            const id: string =
+              (featureObj.id as string) ||
+              (properties?.mapbox_id as string) ||
+              "";
+            const name: string = (properties?.name as string) ?? "Unnamed";
+            const coords: [number, number] = Array.isArray(
+              geometry?.coordinates
+            )
+              ? [
+                  geometry.coordinates[0] as number,
+                  geometry.coordinates[1] as number,
+                ]
+              : [
+                  (properties?.coordinates as Record<string, number>)
+                    ?.longitude || 0,
+                  (properties?.coordinates as Record<string, number>)
+                    ?.latitude || 0,
+                ];
+            const place_formatted: string | undefined =
+              properties?.place_formatted as string | undefined;
+            const full_address: string | undefined =
+              properties?.full_address as string | undefined;
+            const feature_type: string | undefined =
+              properties?.feature_type as string | undefined;
 
-          return {
-            id,
-            name,
-            coordinates: coords,
-            place_formatted,
-            full_address,
-            bbox,
-            feature_type,
-          };
-        });
+            const bbox = properties?.bbox as
+              | [number, number, number, number]
+              | undefined;
+
+            return {
+              id,
+              name,
+              coordinates: coords,
+              place_formatted,
+              full_address,
+              bbox,
+              feature_type,
+            };
+          }
+        );
 
         setSearchResults(results);
         if (results.length > 0) {
@@ -94,16 +114,17 @@ function MapActions({
       console.error("Search error:", error);
       setSearchResults([]);
     } finally {
+      allowNextSearch.current = false;
       setIsSearching(false);
     }
   };
 
-  // Handle search form submission
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (searchValue.length >= 3) {
-      setIsSearching(true);
-      performSearch(searchValue);
+  // fly to the selected feature
+  const handleRetrieve = (feature: any) => {
+    const coords = feature?.geometry?.coordinates;
+    if (Array.isArray(coords) && coords.length >= 2) {
+      const [lng, lat] = coords as [number, number];
+      onFlyTo([lng, lat], 14);
     }
   };
 
@@ -143,12 +164,28 @@ function MapActions({
 
       <form onSubmit={handleSubmit} className="map-search-form">
         <div className="map-search-container">
-          <input
-            type="text"
+          {/* Geocoder renders its own popover results. We:
+              - pass the access token
+              - keep the value controlled via onChange
+              - handle onRetrieve to fly the map
+              - use interceptSearch to block keystroke requests; only allow
+                a request for the next submit-triggered search. */}
+          <GeocoderAny
+            ref={geocoderRef as any}
+            accessToken={import.meta.env.VITE_MAPBOX_TOKEN}
             value={searchValue}
-            onChange={handleSearchChange}
+            onChange={(val: string) => setSearchValue(val)}
+            onRetrieve={handleRetrieve}
+            interceptSearch={(val: string) =>
+              allowNextSearch.current ? val : ""
+            }
             placeholder="Search for a location..."
-            className="map-search-input"
+            options={{
+              limit: 6, // adjust as needed
+              autocomplete: true,
+              // Bias results toward current map center
+              proximity: { lng: center[0], lat: center[1] },
+            }}
           />
           <button
             type="submit"
@@ -158,26 +195,7 @@ function MapActions({
             Search
           </button>
         </div>
-
-        {showResults && searchResults.length > 0 && (
-          <div className="map-search-results">
-            {searchResults.map((result) => (
-              <div
-                key={result.id}
-                className="map-search-result-item"
-                onClick={() => handleResultSelect(result)}
-              >
-                <div className="map-result-name">{result.name}</div>
-                <div className="map-result-address">
-                  {result.place_formatted || result.full_address}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </form>
-
-      {/* Reset moved to top-right in map-topbar */}
     </div>
   );
 }
