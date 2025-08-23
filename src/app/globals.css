@@ -1,45 +1,42 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --color-text-dark: #eae9fc;
-    --color-background-dark: #000005;
-    --color-primary-dark: #3feece;
-    --color-secondary-dark: #91caee;
-    --color-accent-dark: #b8b2e1;
-    --color-text: #040316;
-    --color-background: #fafaff;
-    --color-primary: #11c0a0;
-    --color-secondary: #114b6e;
-    --color-accent: #241e4d;
-  }
+@theme {
+  --font-family-manrope: Manrope, ui-sans-serif, system-ui, sans-serif;
+  
+  --color-text-dark: #eae9fc;
+  --color-background-dark: #000005;
+  --color-primary-dark: #3feece;
+  --color-secondary-dark: #91caee;
+  --color-accent-dark: #b8b2e1;
+  --color-text: #040316;
+  --color-background: #fafaff;
+  --color-primary: #11c0a0;
+  --color-secondary: #114b6e;
+  --color-accent: #241e4d;
 }
 
-@layer components {
-  #map-container {
-    height: 85vh;
-    width: 100%;
-    border-radius: 0.5rem;
-  }
+#map-container {
+  height: 85vh;
+  width: 100%;
+  border-radius: 0.5rem;
+}
 
-  #coords {
-    position: absolute;
-    z-index: 10;
-    top: 1rem;
-    left: 1rem;
-    font-size: 0.875rem;
-    color: #374151;
-    background-color: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
-  }
+#coords {
+  position: absolute;
+  z-index: 10;
+  top: 1rem;
+  left: 1rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
 
-  [data-theme="dark"] #coords {
-    color: #eae9fc;
-    background-color: black;
-  }
+[data-theme="dark"] #coords {
+  color: #eae9fc;
+  background-color: black;
+}
 
   .place-btn-1 {
     position: absolute;
@@ -244,15 +241,14 @@
     color: #eae9fc;
   }
 
-  .map-result-address {
-    font-size: 0.75rem;
-    color: #6b7280;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-  }
+.map-result-address {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
 
-  [data-theme="dark"] .map-result-address {
-    color: #d1d5db;
-  }
+[data-theme="dark"] .map-result-address {
+  color: #d1d5db;
 }

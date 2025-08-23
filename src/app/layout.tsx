@@ -1,11 +1,9 @@
-import localFont from "next/font/local";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../contexts/ThemeContext";
 
-const manrope = localFont({
-  src: "../../public/Manrope-VariableFont_wght.ttf",
-  variable: "--font-manrope",
-  weight: "200 800",
+const manrope = Manrope({
+  subsets: ["latin"],
   display: "swap",
 });
 
@@ -23,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={manrope.variable}>
-      <body className="font-manrope">
+    <html lang="en">
+      <body className={manrope.className}>
         <ThemeProvider>
           {children}
         </ThemeProvider>
