@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useEffect, useState } from "react";
 import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
@@ -21,7 +23,7 @@ function Map() {
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
 
   useEffect(() => {
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
     if (mapContainerRef.current) {
       mapRef.current = new mapboxgl.Map({
@@ -52,7 +54,7 @@ function Map() {
         mapRef.current.remove();
       }
     };
-  }, []);
+  }, [theme]);
 
   // update only the lightPreset when theme changes
   useEffect(() => {
