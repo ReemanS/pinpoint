@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { SearchResult } from "../types/search";
@@ -34,10 +36,10 @@ function MapActions({
   // more complicated queries, not really what I was aiming for
   const performSearch = async (query: string) => {
     try {
-      const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
       const params = new URLSearchParams({
         q: query,
-        access_token: accessToken,
+        access_token: accessToken || "",
         limit: "8",
         autocomplete: "false",
         proximity: `${center[0]},${center[1]}`,
@@ -53,27 +55,24 @@ function MapActions({
       const data = await response.json();
 
       if (data.features && Array.isArray(data.features)) {
-        const results: SearchResult[] = data.features.map((feature: any) => {
-          const id: string = feature.id || feature.properties?.mapbox_id;
-          const name: string = feature.properties?.name ?? "Unnamed";
-          const coords: [number, number] = Array.isArray(
-            feature.geometry?.coordinates
-          )
-            ? [feature.geometry.coordinates[0], feature.geometry.coordinates[1]]
+        const results: SearchResult[] = data.features.map((feature: unknown) => {
+          const featureObj = feature as Record<string, unknown>;
+          const properties = featureObj.properties as Record<string, unknown> | undefined;
+          const geometry = featureObj.geometry as Record<string, unknown> | undefined;
+          
+          const id: string = (featureObj.id as string) || (properties?.mapbox_id as string) || "";
+          const name: string = (properties?.name as string) ?? "Unnamed";
+          const coords: [number, number] = Array.isArray(geometry?.coordinates)
+            ? [geometry.coordinates[0] as number, geometry.coordinates[1] as number]
             : [
-                feature?.properties?.coordinates?.longitude,
-                feature?.properties?.coordinates?.latitude,
+                (properties?.coordinates as Record<string, number>)?.longitude || 0,
+                (properties?.coordinates as Record<string, number>)?.latitude || 0,
               ];
-          const place_formatted: string | undefined =
-            feature.properties?.place_formatted;
-          const full_address: string | undefined =
-            feature.properties?.full_address;
-          const feature_type: string | undefined =
-            feature.properties?.feature_type;
+          const place_formatted: string | undefined = properties?.place_formatted as string | undefined;
+          const full_address: string | undefined = properties?.full_address as string | undefined;
+          const feature_type: string | undefined = properties?.feature_type as string | undefined;
 
-          const bbox = feature.properties?.bbox as
-            | [number, number, number, number]
-            | undefined;
+          const bbox = properties?.bbox as [number, number, number, number] | undefined;
 
           return {
             id,
