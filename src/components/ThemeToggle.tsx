@@ -8,8 +8,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-4 right-4 z-50 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg"
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      className="fixed top-4 right-4 z-50 p-2 bg-white data-dark:bg-gray-800 border border-gray-300 data-dark:border-gray-600 rounded-lg"
     >
       {theme === "light" ? (
         <svg

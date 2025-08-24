@@ -54,7 +54,7 @@ function Map() {
         mapRef.current.remove();
       }
     };
-  }, [theme]);
+  }, []);
 
   // update only the lightPreset when theme changes
   useEffect(() => {
