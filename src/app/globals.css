@@ -15,7 +15,7 @@
   --color-accent: #241e4d;
 }
 
-@custom-variant data-dark (&:is([data-theme="dark"] *, [data-theme="dark"]));
+@custom-variant dark (&:is([data-theme="dark"] *, [data-theme="dark"]));
 
 #map-container {
   height: 85vh;
