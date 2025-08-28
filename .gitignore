@@ -27,5 +27,8 @@ out/
 *.sln
 *.sw?
 
+.github/
+.vscode/
+
 # Sensitive stuff
 .env

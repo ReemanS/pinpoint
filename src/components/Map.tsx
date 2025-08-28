@@ -6,8 +6,10 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import MapActions from "./MapActions";
 
-const INITIAL_COORDS: [number, number] = [-157.3637, 1.9827]; // banan
-const INITIAL_ZOOM = 13;
+// Globe defaults
+// previous INITIAL_COORDS comment: banan
+const GLOBE_CENTER: [number, number] = [0, 0];
+const GLOBE_ZOOM = 1.5;
 
 function Map() {
   const mapRef = useRef<mapboxgl.Map>(null);
@@ -19,14 +21,14 @@ function Map() {
 
   const { theme } = useTheme();
 
-  const [center, setCenter] = useState<[number, number]>(INITIAL_COORDS);
-  const [zoom, setZoom] = useState(INITIAL_ZOOM);
+  const [center, setCenter] = useState<[number, number]>(GLOBE_CENTER);
+  const [zoom, setZoom] = useState(GLOBE_ZOOM);
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
     if (mapContainerRef.current) {
-      mapRef.current = new mapboxgl.Map({
+      const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/standard",
         config: {
@@ -34,19 +36,77 @@ function Map() {
             lightPreset: theme === "dark" ? "night" : "day",
           },
         },
-        center: INITIAL_COORDS,
-        zoom: INITIAL_ZOOM,
+        center: GLOBE_CENTER,
+        zoom: GLOBE_ZOOM,
       });
 
-      mapRef.current.on("move", () => {
+      mapRef.current = map;
+
+      // Default atmosphere
+      map.on("style.load", () => {
+        map.setFog({});
+      });
+
+      // Update state on move
+      map.on("move", () => {
         // get the current center coordinates and zoom level from the map
-        const mapCenter = mapRef.current!.getCenter();
-        const mapZoom = mapRef.current!.getZoom();
+        const mapCenter = map.getCenter();
+        const mapZoom = map.getZoom();
 
         // update state
         setCenter([mapCenter.lng, mapCenter.lat]);
         setZoom(mapZoom);
       });
+
+      // Auto-rotate the globe (spinning)
+      const secondsPerRevolution = 120; // complete revolution every 2 minutes
+      const maxSpinZoom = 4; // stop spinning when zoomed in
+      const slowSpinZoom = 3; // slow down spin between 3-5
+      let userInteracting = false;
+      let spinEnabled = true;
+
+      function spinGlobe() {
+        const z = map.getZoom();
+        if (spinEnabled && !userInteracting && z < maxSpinZoom) {
+          let distancePerSecond = 360 / secondsPerRevolution;
+          if (z > slowSpinZoom) {
+            const zoomDif = (maxSpinZoom - z) / (maxSpinZoom - slowSpinZoom);
+            distancePerSecond *= Math.max(zoomDif, 0);
+          }
+          const c = map.getCenter();
+          c.lng -= distancePerSecond;
+          map.easeTo({ center: c, duration: 1000, easing: (n) => n });
+        }
+      }
+
+      // Pause spinning on interaction
+      map.on("mousedown", () => {
+        userInteracting = true;
+      });
+      // Restart spinning after interaction
+      map.on("mouseup", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      map.on("dragend", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      map.on("pitchend", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      map.on("rotateend", () => {
+        userInteracting = false;
+        spinGlobe();
+      });
+      // When animation ends, continue spinning
+      map.on("moveend", () => {
+        spinGlobe();
+      });
+
+      // kick it off
+      spinGlobe();
     }
 
     return () => {
@@ -144,14 +204,20 @@ function Map() {
   };
 
   return (
-    <div className="relative">
-      <MapActions
-        center={center}
-        zoom={zoom}
-        onFlyTo={handleFlyTo}
-        onDisplayBoundingBox={handleDisplayBoundingBox}
-      />
+    <div className="relative h-screen w-screen">
       <div id="map-container" ref={mapContainerRef} />
+
+      <div className="map-overlay-center">
+        <h1 className="text-5xl md:text-6xl font-bold mb-8 text-text dark:text-text-dark text-center">
+          Pinpoint
+        </h1>
+        <MapActions
+          center={center}
+          zoom={zoom}
+          onFlyTo={handleFlyTo}
+          onDisplayBoundingBox={handleDisplayBoundingBox}
+        />
+      </div>
     </div>
   );
 }

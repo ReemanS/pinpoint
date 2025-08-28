@@ -10,9 +10,6 @@ const manrope = Manrope({
 export const metadata = {
   title: "Pinpoint",
   description: "A learning project in using the Mapbox API and more",
-  icons: {
-    icon: "/vite.svg",
-  },
 };
 
 export default function RootLayout({
@@ -23,9 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={manrope.className}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

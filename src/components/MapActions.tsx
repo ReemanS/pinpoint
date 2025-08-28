@@ -166,7 +166,7 @@ function MapActions({
           <div>Zoom: {zoom.toFixed(2)}</div>
         </div>
         <button
-          onClick={() => onFlyTo([-157.3637, 1.9827], 13)}
+          onClick={() => onFlyTo([0, 0], 1.5)}
           className="map-reset-button map-reset-button--small"
         >
           Reset
