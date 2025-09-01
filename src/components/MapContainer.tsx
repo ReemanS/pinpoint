@@ -1,30 +1,16 @@
 "use client";
 
-import { useRef, useEffect, useState, RefObject } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import MapActions from "./MapActions";
 
 // Globe defaults
-// previous INITIAL_COORDS comment: banan
 const GLOBE_CENTER: [number, number] = [0, 0];
 const GLOBE_ZOOM = 1.5;
 
-interface MapProps {
-  onFlyToRef?: RefObject<
-    ((coordinates: [number, number], zoom?: number) => void) | null
-  >;
-  onDisplayBoundingBoxRef?: RefObject<
-    ((bbox: [number, number, number, number] | null) => void) | null
-  >;
-  onMapStateChange?: (center: [number, number], zoom: number) => void;
-}
-
-function Map({
-  onFlyToRef,
-  onDisplayBoundingBoxRef,
-  onMapStateChange,
-}: MapProps) {
+function MapContainer() {
   const mapRef = useRef<mapboxgl.Map>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -38,12 +24,14 @@ function Map({
   const [zoom, setZoom] = useState(GLOBE_ZOOM);
 
   useEffect(() => {
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    // Note: NEXT_PUBLIC_ tokens are visible to clients by design
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
     if (mapContainerRef.current) {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/standard",
+        projection: "globe",
         config: {
           basemap: {
             lightPreset: theme === "dark" ? "night" : "day",
@@ -69,15 +57,12 @@ function Map({
         // update state
         setCenter([mapCenter.lng, mapCenter.lat]);
         setZoom(mapZoom);
-
-        // notify parent component
-        onMapStateChange?.([mapCenter.lng, mapCenter.lat], mapZoom);
       });
 
       // Auto-rotate the globe (spinning)
       const secondsPerRevolution = 120; // complete revolution every 2 minutes
       const maxSpinZoom = 4; // stop spinning when zoomed in
-      const slowSpinZoom = 3; // slow down spin between 3-5
+      const slowSpinZoom = 3; // slow down spin between 3-4
       let userInteracting = false;
       let spinEnabled = true;
 
@@ -143,7 +128,7 @@ function Map({
     }
   }, [theme]);
 
-  // Function to fly to a specific location
+  // Fly to a specific location
   const handleFlyTo = (coordinates: [number, number], newZoom?: number) => {
     if (mapRef.current) {
       mapRef.current.flyTo({
@@ -219,24 +204,18 @@ function Map({
     }
   };
 
-  // Expose handlers to parent via callbacks
-  useEffect(() => {
-    if (onFlyToRef) {
-      onFlyToRef.current = handleFlyTo;
-    }
-  }, [onFlyToRef]);
-
-  useEffect(() => {
-    if (onDisplayBoundingBoxRef) {
-      onDisplayBoundingBoxRef.current = handleDisplayBoundingBox;
-    }
-  }, [onDisplayBoundingBoxRef]);
-
   return (
     <div className="relative h-screen w-screen">
       <div id="map-container" ref={mapContainerRef} />
+
+      <MapActions
+        center={center}
+        zoom={zoom}
+        onFlyTo={handleFlyTo}
+        onDisplayBoundingBox={handleDisplayBoundingBox}
+      />
     </div>
   );
 }
 
-export default Map;
+export default MapContainer;

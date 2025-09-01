@@ -1,5 +1,5 @@
 import { Manrope } from "next/font/google";
-import "./globals.css";
+import "@/globals/globals.css";
 import { ThemeProvider } from "../contexts/ThemeContext";
 
 const manrope = Manrope({

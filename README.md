@@ -7,10 +7,9 @@ Built with Next.js 15.x and React 19
 ## Features
 
 - Interactive map powered by Mapbox GL JS
-- Dark/light theme switching with system preference detection
+- Dark/light theme
 - Location search using Mapbox Geocoding API v6
 - Bounding box visualization for search results
-- Responsive design with TailwindCSS
 - TypeScript support
 
 ## Development

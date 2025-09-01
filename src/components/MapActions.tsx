@@ -157,64 +157,70 @@ function MapActions({
   };
 
   return (
-    <div className="map-actions-container">
-      <div className="map-topbar">
-        <div className="map-coords">
-          <div>
-            Longitude: {center[0].toFixed(4)} | Latitude: {center[1].toFixed(4)}
+    <div className="map-overlay-center">
+      <h1 className="text-5xl md:text-6xl font-bold mb-8 text-text dark:text-text-dark text-center">
+        Pinpoint
+      </h1>
+      <div className="map-actions-container">
+        <div className="map-topbar">
+          <div className="map-coords">
+            <div>
+              Longitude: {center[0].toFixed(4)} | Latitude:{" "}
+              {center[1].toFixed(4)}
+            </div>
+            <div>Zoom: {zoom.toFixed(2)}</div>
           </div>
-          <div>Zoom: {zoom.toFixed(2)}</div>
-        </div>
-        <button
-          onClick={() => onFlyTo([0, 0], 1.5)}
-          className="map-reset-button map-reset-button--small"
-        >
-          Reset
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="map-search-form">
-        <div className="map-search-container">
-          <input
-            type="text"
-            className="map-search-input"
-            placeholder="Search for a location..."
-            value={searchValue}
-            onChange={handleSearchChange}
-            aria-label="Search for a location"
-          />
           <button
-            type="submit"
-            className="map-search-button"
-            disabled={isSearching}
+            onClick={() => onFlyTo([0, 0], 1.5)}
+            className="map-reset-button map-reset-button--small"
           >
-            {isSearching ? "Searching…" : "Search"}
+            Reset
           </button>
         </div>
-        {showResults && (
-          <div className="map-results">
-            {searchResults.length === 0 ? (
-              <div className="map-result-item">No results</div>
-            ) : (
-              searchResults.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className="map-result-item"
-                  onClick={() => handleResultSelect(r)}
-                >
-                  <div>{r.name}</div>
-                  {(r.place_formatted || r.full_address) && (
-                    <div className="map-result-secondary">
-                      {r.place_formatted || r.full_address}
-                    </div>
-                  )}
-                </button>
-              ))
-            )}
+
+        <form onSubmit={handleSubmit} className="map-search-form">
+          <div className="map-search-container">
+            <input
+              type="text"
+              className="map-search-input"
+              placeholder="Search for a location..."
+              value={searchValue}
+              onChange={handleSearchChange}
+              aria-label="Search for a location"
+            />
+            <button
+              type="submit"
+              className="map-search-button"
+              disabled={isSearching}
+            >
+              {isSearching ? "Searching…" : "Search"}
+            </button>
           </div>
-        )}
-      </form>
+          {showResults && (
+            <div className="map-results">
+              {searchResults.length === 0 ? (
+                <div className="map-result-item">No results</div>
+              ) : (
+                searchResults.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="map-result-item"
+                    onClick={() => handleResultSelect(r)}
+                  >
+                    <div>{r.name}</div>
+                    {(r.place_formatted || r.full_address) && (
+                      <div className="map-result-secondary">
+                        {r.place_formatted || r.full_address}
+                      </div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
