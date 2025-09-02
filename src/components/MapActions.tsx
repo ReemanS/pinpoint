@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { searchLocations } from "../api/mapbox";
-import { MAP_DEFAULTS } from "../api/config";
-import type { SearchResult } from "../types/search";
+import { searchLocations } from "@/api/mapbox";
+import { MAP_DEFAULTS } from "@/api/config";
+import type { SearchResult } from "@/types/search";
 
 interface MapActionsProps {
   center: [number, number];
@@ -130,21 +130,21 @@ function MapActions({
             </button>
           </div>
           {showResults && (
-            <div className="map-results">
+            <div className="max-h-40 overflow-y-auto">
               {searchResults.length === 0 ? (
-                <div className="map-result-item">No results</div>
+                <div className="flex">No results</div>
               ) : (
-                searchResults.map((r) => (
+                searchResults.map((result) => (
                   <button
-                    key={r.id}
+                    key={result.id}
                     type="button"
-                    className="map-result-item"
-                    onClick={() => handleResultSelect(r)}
+                    className="flex flex-col items-start hover:bg-gray-200 dark:hover:bg-slate-700 hover:cursor-pointer w-full p-2 rounded"
+                    onClick={() => handleResultSelect(result)}
                   >
-                    <div>{r.name}</div>
-                    {(r.place_formatted || r.full_address) && (
-                      <div className="map-result-secondary">
-                        {r.place_formatted || r.full_address}
+                    <div className="font-bold">{result.name}</div>
+                    {(result.place_formatted || result.full_address) && (
+                      <div className="text-left">
+                        {result.place_formatted || result.full_address}
                       </div>
                     )}
                   </button>
