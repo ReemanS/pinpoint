@@ -5,10 +5,11 @@ import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import MapActions from "./MapActions";
+import { getMapboxToken, MAP_DEFAULTS } from "../api/config";
 
 // Globe defaults
-const GLOBE_CENTER: [number, number] = [0, 0];
-const GLOBE_ZOOM = 1.5;
+const GLOBE_CENTER = MAP_DEFAULTS.center;
+const GLOBE_ZOOM = MAP_DEFAULTS.zoom;
 
 function MapContainer() {
   const mapRef = useRef<mapboxgl.Map>(null);
@@ -21,17 +22,22 @@ function MapContainer() {
   const { theme } = useTheme();
 
   const [center, setCenter] = useState<[number, number]>(GLOBE_CENTER);
-  const [zoom, setZoom] = useState(GLOBE_ZOOM);
+  const [zoom, setZoom] = useState<number>(GLOBE_ZOOM);
 
   useEffect(() => {
     // Note: NEXT_PUBLIC_ tokens are visible to clients by design
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+    try {
+      mapboxgl.accessToken = getMapboxToken();
+    } catch (error) {
+      console.error("Failed to initialize Mapbox:", error);
+      return;
+    }
 
     if (mapContainerRef.current) {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/standard",
-        projection: "globe",
+        style: MAP_DEFAULTS.style,
+        projection: MAP_DEFAULTS.projection,
         config: {
           basemap: {
             lightPreset: theme === "dark" ? "night" : "day",
@@ -60,23 +66,22 @@ function MapContainer() {
       });
 
       // Auto-rotate the globe (spinning)
-      const secondsPerRevolution = 120; // complete revolution every 2 minutes
-      const maxSpinZoom = 4; // stop spinning when zoomed in
-      const slowSpinZoom = 3; // slow down spin between 3-4
+      const { secondsPerRevolution, maxSpinZoom, slowSpinZoom } =
+        MAP_DEFAULTS.spinSettings;
       let userInteracting = false;
       let spinEnabled = true;
 
       function spinGlobe() {
-        const z = map.getZoom();
-        if (spinEnabled && !userInteracting && z < maxSpinZoom) {
+        const zoom = map.getZoom();
+        if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
           let distancePerSecond = 360 / secondsPerRevolution;
-          if (z > slowSpinZoom) {
-            const zoomDif = (maxSpinZoom - z) / (maxSpinZoom - slowSpinZoom);
+          if (zoom > slowSpinZoom) {
+            const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
             distancePerSecond *= Math.max(zoomDif, 0);
           }
-          const c = map.getCenter();
-          c.lng -= distancePerSecond;
-          map.easeTo({ center: c, duration: 1000, easing: (n) => n });
+          const center = map.getCenter();
+          center.lng -= distancePerSecond;
+          map.easeTo({ center, duration: 1000, easing: (n) => n });
         }
       }
 

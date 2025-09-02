@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { searchLocations } from "../api/mapbox";
+import { MAP_DEFAULTS } from "../api/config";
 import type { SearchResult } from "../types/search";
 
 interface MapActionsProps {
@@ -36,92 +38,24 @@ function MapActions({
   // more complicated queries, not really what I was aiming for
   const performSearch = async (query: string) => {
     try {
-      const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      if (!accessToken) {
-        console.warn(
-          "Missing NEXT_PUBLIC_MAPBOX_TOKEN; cannot perform search."
-        );
-        setSearchResults([]);
-        setShowResults(false);
-        return;
-      }
-      const params = new URLSearchParams({
-        q: query,
-        access_token: accessToken || "",
-        limit: "8",
-        autocomplete: "false",
-        proximity: `${center[0]},${center[1]}`,
+      setIsSearching(true);
+      const results = await searchLocations({
+        query,
+        center,
+        limit: 8,
         types: "country,region,postcode,district,place,locality,neighborhood",
       });
-      const url = `https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`;
-      const response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const data = await response.json();
-
-      if (data.features && Array.isArray(data.features)) {
-        const results: SearchResult[] = data.features.map(
-          (feature: unknown) => {
-            const featureObj = feature as Record<string, unknown>;
-            const properties = featureObj.properties as
-              | Record<string, unknown>
-              | undefined;
-            const geometry = featureObj.geometry as
-              | Record<string, unknown>
-              | undefined;
-
-            const id: string =
-              (featureObj.id as string) ||
-              (properties?.mapbox_id as string) ||
-              "";
-            const name: string = (properties?.name as string) ?? "Unnamed";
-            const coords: [number, number] = Array.isArray(
-              geometry?.coordinates
-            )
-              ? [
-                  geometry.coordinates[0] as number,
-                  geometry.coordinates[1] as number,
-                ]
-              : [
-                  (properties?.coordinates as Record<string, number>)
-                    ?.longitude || 0,
-                  (properties?.coordinates as Record<string, number>)
-                    ?.latitude || 0,
-                ];
-            const place_formatted: string | undefined =
-              properties?.place_formatted as string | undefined;
-            const full_address: string | undefined =
-              properties?.full_address as string | undefined;
-            const feature_type: string | undefined =
-              properties?.feature_type as string | undefined;
-
-            const bbox = properties?.bbox as
-              | [number, number, number, number]
-              | undefined;
-
-            return {
-              id,
-              name,
-              coordinates: coords,
-              place_formatted,
-              full_address,
-              bbox,
-              feature_type,
-            };
-          }
-        );
-
-        setSearchResults(results);
-        if (results.length > 0) {
-          setShowResults(true);
-        }
+      setSearchResults(results);
+      if (results.length > 0) {
+        setShowResults(true);
+      } else {
+        setShowResults(false);
       }
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults([]);
+      setShowResults(false);
     } finally {
       setIsSearching(false);
     }
@@ -135,7 +69,6 @@ function MapActions({
       setSearchResults([]);
       return;
     }
-    setIsSearching(true);
     await performSearch(q);
   };
 
@@ -171,7 +104,7 @@ function MapActions({
             <div>Zoom: {zoom.toFixed(2)}</div>
           </div>
           <button
-            onClick={() => onFlyTo([0, 0], 1.5)}
+            onClick={() => onFlyTo(MAP_DEFAULTS.center, MAP_DEFAULTS.zoom)}
             className="map-reset-button map-reset-button--small"
           >
             Reset
