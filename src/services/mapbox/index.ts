@@ -1,4 +1,4 @@
-export { searchLocations } from "@/services/mapbox";
+export { searchLocations } from "@/services/mapbox/mapbox";
 export {
   getMapboxToken,
   MAP_DEFAULTS,
