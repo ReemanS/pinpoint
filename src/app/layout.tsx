@@ -1,8 +1,8 @@
-import { Manrope } from "next/font/google";
+import { Inter } from "next/font/google";
 import "@/globals/globals.css";
-import { ThemeProvider } from "../contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={manrope.className}>
+      <body className={inter.className}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

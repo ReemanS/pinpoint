@@ -6,6 +6,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { searchLocations } from "@/services/mapbox";
 import { MAP_DEFAULTS } from "@/services/mapbox/config";
 import type { SearchResult } from "@/types/search";
+import { Slabo_27px } from "next/font/google";
+import { Search } from "lucide-react";
+
+const slabo = Slabo_27px({
+  weight: ["400"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 interface MapActionsProps {
   center: [number, number];
@@ -95,11 +103,12 @@ function MapActions({
   return (
     <motion.div
       layoutId="map-actions-container"
-      className={
-        isNavigating
-          ? "absolute top-5 left-5 w-80 max-w-[calc(100vw-2.5rem)] z-20"
-          : "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] min-w-[90vw] sm:min-w-0 z-20"
-      }
+      className={`absolute z-20
+        ${
+          isNavigating
+            ? "top-5 left-5 w-80 max-w-[calc(100vw-2.5rem)]"
+            : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[90vw] md:min-w-[550px]"
+        }`}
       transition={{
         type: "spring",
         stiffness: 500,
@@ -108,13 +117,15 @@ function MapActions({
     >
       <motion.h1
         layout
-        className={
-          isNavigating
-            ? "text-2xl mb-4 text-accent dark:text-accent-dark cursor-pointer hover:opacity-80 font-bold text-center"
-            : "text-5xl md:text-6xl mb-8 text-accent dark:text-accent-dark font-bold text-center"
-        }
-        onClick={() => isNavigating && setIsNavigating(false)}
+        className={`mb-4 text-primary dark:text-primary-dark ${slabo.className}
+          ${
+            isNavigating
+              ? "text-5xl text-primary-dark cursor-pointer text-left transition hover:opacity-80 max-w-min"
+              : "text-7xl md:text-8xl mb-6 md:mb-8 text-center"
+          }
+        `}
         title={isNavigating ? "Click to return to center view" : ""}
+        onClick={() => isNavigating && setIsNavigating(false)}
         transition={{
           type: "spring",
           stiffness: 500,
@@ -126,19 +137,15 @@ function MapActions({
 
       <motion.div
         layout
-        className={
-          isNavigating
-            ? "z-10 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col gap-3 w-full"
-            : "z-10 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col gap-3 w-full sm:max-w-lg md:max-w-xl"
-        }
+        className="z-10 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex"
         transition={{
           type: "spring",
           stiffness: 500,
           damping: 35,
         }}
       >
-        <motion.div layout className="flex items-start justify-between gap-2">
-          {/* <motion.div
+        {/* <motion.div layout className="flex items-start justify-between gap-2">
+          <motion.div
             layout
             className={`
               text-sm text-gray-700 dark:text-accent-dark
@@ -155,7 +162,7 @@ function MapActions({
               {center[1].toFixed(4)}
             </div>
             <div>Zoom: {zoom.toFixed(2)}</div>
-          </motion.div> */}
+          </motion.div>
           <motion.div layout className="flex gap-1">
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -177,19 +184,32 @@ function MapActions({
               Reset
             </motion.button>
           </motion.div>
-        </motion.div>
+        </motion.div> */}
 
         <motion.form
           layout
           onSubmit={handleSubmit}
-          className="flex flex-col gap-2 relative"
+          className="flex flex-col gap-2 relative w-full"
         >
-          <motion.div layout className="flex flex-col sm:flex-row gap-2">
+          <motion.div
+            layout
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 35,
+            }}
+            className="flex sm:flex-row gap-2"
+          >
             <motion.input
               layout
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 35,
+              }}
               layoutId="search-input"
               type="text"
-              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-accent-dark flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2"
               placeholder="Search for a location..."
               value={searchValue}
               onChange={handleSearchChange}
@@ -198,17 +218,19 @@ function MapActions({
             <motion.button
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="bg-primary dark:bg-primary-dark text-white dark:text-accent p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
+              className="bg-accent text-background p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
               disabled={isSearching}
             >
-              {isSearching ? "Searching…" : "Search"}
+              <Search />
             </motion.button>
           </motion.div>
           <AnimatePresence>
             {showResults && (
               <motion.div
                 layout
-                className="max-h-40 overflow-y-auto overflow-x-clip"
+                className={`overflow-y-auto overflow-x-clip ${
+                  isNavigating ? "max-h-900" : "max-h-50"
+                }`}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -230,7 +252,7 @@ function MapActions({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div className="font-bold text-gray-800 dark:text-accent-dark">
+                      <div className="font-bold text-gray-800 dark:text-text-dark">
                         {result.name}
                       </div>
                       {(result.place_formatted || result.full_address) && (

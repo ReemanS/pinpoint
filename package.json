@@ -13,6 +13,7 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.12",
     "dotenv": "^17.2.1",
+    "lucide-react": "^0.542.0",
     "mapbox-gl": "^3.14.0",
     "motion": "^12.23.12",
     "next": "^15.5.0",

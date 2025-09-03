@@ -3,16 +3,16 @@
 @theme {
   --font-family-manrope: Manrope, ui-sans-serif, system-ui, sans-serif;
 
-  --color-text-dark: #eae9fc;
-  --color-background-dark: #000005;
-  --color-primary-dark: #3feece;
-  --color-secondary-dark: #91caee;
-  --color-accent-dark: #b8b2e1;
-  --color-text: #040316;
-  --color-background: #fafaff;
-  --color-primary: #11c0a0;
-  --color-secondary: #114b6e;
-  --color-accent: #241e4d;
+  --color-text-dark: #fcf3f3;
+  --color-background-dark: #040101;
+  --color-primary-dark: #8f98d6;
+  --color-secondary-dark: #24307a;
+  --color-accent-dark: #5362d5;
+  --color-text: #0d0303;
+  --color-background: #fefafa;
+  --color-primary: #293170;
+  --color-secondary: #8591db;
+  --color-accent: #2a39ac;
 }
 
 @custom-variant dark (&:is([data-theme="dark"] *, [data-theme="dark"]));
