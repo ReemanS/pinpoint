@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { searchLocations } from "@/services/mapbox";
-import { MAP_DEFAULTS } from "@/services/mapbox/config";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
 import { Search } from "lucide-react";
@@ -100,6 +99,34 @@ function MapActions({
     setSearchValue(result.name);
   };
 
+  const handleAIResponse = async (prompt: string) => {
+    setIsSearching(true);
+    try {
+      const res = await fetch("/api/georesponse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        console.error("AI request failed", res.status, txt);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.status === "success") {
+        console.log(data.data);
+      } else {
+        console.log("Error:", data.error);
+      }
+    } catch (err) {
+      console.error("Failed to call /api/georesponse:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <motion.div
       layoutId="map-actions-container"
@@ -188,7 +215,7 @@ function MapActions({
 
         <motion.form
           layout
-          onSubmit={handleSubmit}
+          // onSubmit={handleSubmit}
           className="flex flex-col gap-2 relative w-full"
         >
           <motion.div
@@ -220,6 +247,10 @@ function MapActions({
               type="submit"
               className="bg-accent text-background p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
               disabled={isSearching}
+              onClick={(e) => {
+                e.preventDefault();
+                handleAIResponse(searchValue);
+              }}
             >
               <Search />
             </motion.button>
