@@ -3,7 +3,7 @@ import {
   GEOCODING_API_URL,
   DEFAULT_SEARCH_CONFIG,
   getMapboxToken,
-} from "@/api/config";
+} from "@/services/mapbox/config";
 
 interface SearchParams {
   query: string;

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { searchLocations } from "@/api/mapbox";
-import { MAP_DEFAULTS } from "@/api/config";
+import { searchLocations } from "@/services/mapbox";
+import { MAP_DEFAULTS } from "@/services/mapbox/config";
 import type { SearchResult } from "@/types/search";
 
 interface MapActionsProps {
@@ -90,13 +90,13 @@ function MapActions({
   };
 
   return (
-    <div className="map-overlay-center">
+    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 w-full max-w-[500px] min-w-[90vw] sm:min-w-0">
       <h1 className="text-5xl md:text-6xl font-bold mb-8 text-text dark:text-text-dark text-center">
         Pinpoint
       </h1>
-      <div className="map-actions-container">
-        <div className="map-topbar">
-          <div className="map-coords">
+      <div className="z-10 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col gap-3 w-full sm:max-w-lg md:max-w-xl">
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-sm text-gray-700 dark:text-text-dark">
             <div>
               Longitude: {center[0].toFixed(4)} | Latitude:{" "}
               {center[1].toFixed(4)}
@@ -105,17 +105,17 @@ function MapActions({
           </div>
           <button
             onClick={() => onFlyTo(MAP_DEFAULTS.center, MAP_DEFAULTS.zoom)}
-            className="map-reset-button map-reset-button--small"
+            className="bg-secondary dark:bg-secondary-dark text-white dark:text-accent px-2 py-1 rounded-lg shadow-md hover:opacity-90 transition-opacity text-xs leading-4 border-none cursor-pointer"
           >
             Reset
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="map-search-form">
-          <div className="map-search-container">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 relative">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              className="map-search-input"
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-accent-dark flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2"
               placeholder="Search for a location..."
               value={searchValue}
               onChange={handleSearchChange}
@@ -123,7 +123,7 @@ function MapActions({
             />
             <button
               type="submit"
-              className="map-search-button"
+              className="bg-primary dark:bg-primary-dark text-white dark:text-accent p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
               disabled={isSearching}
             >
               {isSearching ? "Searching…" : "Search"}
@@ -132,18 +132,22 @@ function MapActions({
           {showResults && (
             <div className="max-h-40 overflow-y-auto">
               {searchResults.length === 0 ? (
-                <div className="flex">No results</div>
+                <div className="flex justify-center p-2 text-gray-500 dark:text-gray-400">
+                  No results
+                </div>
               ) : (
                 searchResults.map((result) => (
                   <button
                     key={result.id}
                     type="button"
-                    className="flex flex-col items-start hover:bg-gray-200 dark:hover:bg-slate-700 hover:cursor-pointer w-full p-2 rounded"
+                    className="flex flex-col items-start w-full p-2 rounded bg-transparent border-none cursor-pointer text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     onClick={() => handleResultSelect(result)}
                   >
-                    <div className="font-bold">{result.name}</div>
+                    <div className="font-bold text-gray-800 dark:text-accent-dark">
+                      {result.name}
+                    </div>
                     {(result.place_formatted || result.full_address) && (
-                      <div className="text-left">
+                      <div className="text-left text-gray-500 dark:text-gray-400 text-sm">
                         {result.place_formatted || result.full_address}
                       </div>
                     )}

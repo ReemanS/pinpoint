@@ -5,7 +5,7 @@ import { useTheme } from "../hooks/useTheme";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import MapActions from "./MapActions";
-import { getMapboxToken, MAP_DEFAULTS } from "../api/config";
+import { getMapboxToken, MAP_DEFAULTS } from "../services/mapbox/config";
 
 // Globe defaults
 const GLOBE_CENTER = MAP_DEFAULTS.center;
