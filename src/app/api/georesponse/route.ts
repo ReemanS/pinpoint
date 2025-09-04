@@ -3,7 +3,6 @@
 import { NextResponse } from "next/server";
 import { createGeoresponse } from "@/services/openai/openai";
 import { APIResponse } from "@/services/openai/openai";
-import { z } from "zod";
 
 export async function POST(req: Request) {
   try {
