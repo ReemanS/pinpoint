@@ -2,25 +2,29 @@
 
 import { NextResponse } from "next/server";
 import { createGeoresponse } from "@/services/openai/openai";
+import { APIResponse } from "@/services/openai/openai";
+import { z } from "zod";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const prompt = typeof body === "string" ? body : body?.prompt;
 
-    if (!prompt || typeof prompt !== "string") {
+    if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
       return NextResponse.json(
-        { status: "error", error: "prompt is required" },
+        APIResponse.parse({ status: "error", error: "prompt is required" }),
         { status: 400 }
       );
     }
 
-    const result = await createGeoresponse(prompt);
-    return NextResponse.json(result);
+    const result = await APIResponse.parseAsync(
+      await createGeoresponse(prompt)
+    );
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
-    console.error("/api/georesponse error", err);
+    console.error("/api/georesponse ERROR: ", err);
     return NextResponse.json(
-      { status: "error", error: "Invalid request body" },
+      APIResponse.parse({ status: "error", error: "Invalid request body" }),
       { status: 400 }
     );
   }
