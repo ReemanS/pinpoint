@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { searchLocations } from "@/services/mapbox";
+import { getGeoResponse } from "@/services/geo";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
 import { Search } from "lucide-react";
@@ -48,17 +49,19 @@ function MapActions({
   const performSearch = async (query: string) => {
     try {
       setIsSearching(true);
-      const results = await searchLocations({
+      const response = await searchLocations({
         query,
         center,
         limit: 8,
         types: "country,region,postcode,district,place,locality,neighborhood",
       });
 
-      setSearchResults(results);
-      if (results.length > 0) {
-        setShowResults(true);
+      if (response.status === "success") {
+        setSearchResults(response.data || []);
+        setShowResults((response.data?.length || 0) > 0);
       } else {
+        console.error("Search error:", response.error);
+        setSearchResults([]);
         setShowResults(false);
       }
     } catch (error) {
@@ -102,26 +105,16 @@ function MapActions({
   const handleAIResponse = async (prompt: string) => {
     setIsSearching(true);
     try {
-      const res = await fetch("/api/georesponse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+      const response = await getGeoResponse(prompt);
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        console.error("AI request failed", res.status, txt);
-        return;
-      }
-
-      const data = await res.json();
-      if (data.status === "success") {
-        console.log(data.data);
+      if (response.status === "success") {
+        // better handling later
+        console.log(response.data);
       } else {
-        console.log("Error:", data.error);
+        console.log("Error:", response.error);
       }
     } catch (err) {
-      console.error("Failed to call /api/georesponse:", err);
+      console.error("Failed to get geo response:", err);
     } finally {
       setIsSearching(false);
     }

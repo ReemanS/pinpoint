@@ -1,52 +1,13 @@
 import OpenAI from "openai";
 import { GEO_PROMPT } from "./config";
 import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
-
-// unified API response, to be refactored later
-export const APIResponse = z.object({
-  status: z.enum(["success", "error"]),
-  data: z.optional(z.any()),
-  error: z.optional(z.string()),
-});
-
-const GeoResponse = z.object({
-  reply: z
-    .string()
-    .describe(
-      "A concise, factual answer to the geographical question. Keep it informative but brief."
-    ),
-  topics: z
-    .array(z.string())
-    .describe(
-      "Key geographical topics, terms, or concepts extracted from the question and answer. Maximum 5 topics."
-    ),
-  suggestedFollowUps: z
-    .array(z.string())
-    .describe(
-      "3-4 helpful follow-up questions the user might want to ask next, related to geography."
-    ),
-  citations: z
-    .union([
-      z.array(
-        z.object({
-          title: z.string().describe("Title of the reference source"),
-          url: z.string().describe("URL of the reference source"),
-        })
-      ),
-      z.null(),
-    ])
-    .describe(
-      "External reference sources if specific facts, statistics, or specialized information was mentioned. Use null if no specific citations are needed."
-    ),
-});
+import { ApiResponse } from "@/services/api";
+import { BaseGeoResponseDataSchema } from "@/types/geo";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
-export async function createGeoresponse(
-  request: string
-): Promise<z.infer<typeof APIResponse>> {
+export async function createGeoResponse(request: string): Promise<ApiResponse> {
   if (!request || typeof request !== "string") {
     return {
       status: "error",
@@ -76,7 +37,7 @@ export async function createGeoresponse(
       instructions: system,
       input: request,
       text: {
-        format: zodTextFormat(GeoResponse, "GeoResponse"),
+        format: zodTextFormat(BaseGeoResponseDataSchema, "GeoResponse"),
       },
       temperature: 0.3,
     });
@@ -85,6 +46,7 @@ export async function createGeoresponse(
 
     if (parsed) {
       const response = {
+        // theres gotta be a better way to add these, but for now this sticks :D
         ...parsed,
         model: modelResponse.model,
         requestId: modelResponse._request_id || undefined,

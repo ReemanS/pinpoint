@@ -1,1 +1,1 @@
-export { createGeoresponse } from "./openai";
+export { createGeoResponse } from "./openai";
