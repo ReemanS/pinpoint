@@ -2,6 +2,11 @@ import { z } from "zod";
 
 // Base Geo response data schema (what comes from OpenAI)
 export const BaseGeoResponseDataSchema = z.object({
+  navigateTo: z
+    .string()
+    .describe(
+      "The single, specific, modern day geographical location being discussed. This will be geocoded and sent to the Mapbox API for navigation. The mapbox types supported are country,region,postcode,district,place,locality,neighborhood"
+    ),
   reply: z
     .string()
     .describe(

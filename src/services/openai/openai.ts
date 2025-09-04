@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { GEO_PROMPT } from "./config";
 import { zodTextFormat } from "openai/helpers/zod";
 import { ApiResponse } from "@/services/api";
-import { BaseGeoResponseDataSchema } from "@/types/geo";
+import { BaseGeoResponseDataSchema } from "@/services/geo/schema";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;

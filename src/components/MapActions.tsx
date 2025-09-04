@@ -8,6 +8,7 @@ import { getGeoResponse } from "@/services/geo";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
 import { Search } from "lucide-react";
+import { GeoResponseData } from "@/services/geo/schema";
 
 const slabo = Slabo_27px({
   weight: ["400"],
@@ -33,6 +34,7 @@ function MapActions({
   const [showResults, setShowResults] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [AIResponse, setAIResponse] = useState<string>("");
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -108,8 +110,20 @@ function MapActions({
       const response = await getGeoResponse(prompt);
 
       if (response.status === "success") {
-        // better handling later
         console.log(response.data);
+        setAIResponse(response.data?.reply || "No reply available.");
+        if (response.data?.navigateTo) {
+          const location = await searchLocations({
+            query: response.data.navigateTo,
+            center,
+            limit: 1,
+            types:
+              "country,region,postcode,district,place,locality,neighborhood",
+          });
+          if (location.status === "success" && location.data?.[0]) {
+            handleResultSelect(location.data[0]);
+          }
+        }
       } else {
         console.log("Error:", response.error);
       }
@@ -249,7 +263,12 @@ function MapActions({
             </motion.button>
           </motion.div>
           <AnimatePresence>
-            {showResults && (
+            {AIResponse && (
+              <div className="flex justify-center p-2 text-text dark:text-text-dark">
+                <span>{AIResponse}</span>
+              </div>
+            )}
+            {/* {showResults && (
               <motion.div
                 layout
                 className={`overflow-y-auto overflow-x-clip ${
@@ -288,7 +307,7 @@ function MapActions({
                   ))
                 )}
               </motion.div>
-            )}
+            )} */}
           </AnimatePresence>
         </motion.form>
       </motion.div>

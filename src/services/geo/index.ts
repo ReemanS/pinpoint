@@ -1,5 +1,5 @@
 import { apiClient, ApiResponse, ApiResponseSchema } from "@/services/api";
-import { GeoResponseDataSchema, GeoResponseData } from "@/types/geo";
+import { GeoResponseDataSchema, GeoResponseData } from "@/services/geo/schema";
 
 // Extend the base ApiResponse schema with our specific data type
 // now we're using and modifying the unified types
@@ -8,7 +8,8 @@ const GeoApiResponseSchema = ApiResponseSchema.extend({
 });
 
 /**
- * Get AI-powered geographical response
+ * Get AI-powered geographical response.
+ * @returns `Promise<ApiResponse<GeoResponseData>>` The API response containing geographical data or an error message.
  */
 export async function getGeoResponse(
   prompt: string
