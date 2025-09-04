@@ -7,8 +7,7 @@ import { searchLocations } from "@/services/mapbox";
 import { getGeoResponse } from "@/services/geo";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
-import { Search } from "lucide-react";
-import { GeoResponseData } from "@/services/geo/schema";
+import { SendHorizontal } from "lucide-react";
 
 const slabo = Slabo_27px({
   weight: ["400"],
@@ -234,7 +233,7 @@ function MapActions({
             }}
             className="flex sm:flex-row gap-2"
           >
-            <motion.input
+            <motion.textarea
               layout
               transition={{
                 type: "spring",
@@ -242,24 +241,36 @@ function MapActions({
                 damping: 35,
               }}
               layoutId="search-input"
-              type="text"
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2"
-              placeholder="Search for a location..."
+              rows={1}
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2 resize-none overflow-hidden"
+              placeholder="Ask something geography-related..."
               value={searchValue}
-              onChange={handleSearchChange}
-              aria-label="Search for a location"
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchValue(value);
+                if (value.length < 3) {
+                  setSearchResults([]);
+                  setShowResults(false);
+                }
+              }}
+              onInput={(e) => {
+                const t = e.currentTarget as HTMLTextAreaElement;
+                t.style.height = "auto";
+                t.style.height = `${t.scrollHeight}px`;
+              }}
+              aria-label="Ask something geography related"
             />
             <motion.button
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="bg-accent text-background p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
+              className="bg-accent text-gray-200 p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer max-h-min"
               disabled={isSearching}
               onClick={(e) => {
                 e.preventDefault();
                 handleAIResponse(searchValue);
               }}
             >
-              <Search />
+              <SendHorizontal />
             </motion.button>
           </motion.div>
           <AnimatePresence>
