@@ -34,6 +34,9 @@ function MapActions({
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [AIResponse, setAIResponse] = useState<string>("");
+  const [messages, setMessages] = useState<{ prompt: string; reply: string }[]>(
+    []
+  );
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -106,11 +109,22 @@ function MapActions({
   const handleAIResponse = async (prompt: string) => {
     setIsSearching(true);
     try {
+      const trimmedPrompt = prompt.trim();
       const response = await getGeoResponse(prompt);
 
       if (response.status === "success") {
         console.log(response.data);
         setAIResponse(response.data?.reply || "No reply available.");
+        if (response.data?.reply) {
+          // append to messages history
+          setMessages((prev) => [
+            ...prev,
+            {
+              prompt: trimmedPrompt || "(empty)",
+              reply: response.data!.reply!,
+            },
+          ]);
+        }
         if (response.data?.navigateTo) {
           const location = await searchLocations({
             query: response.data.navigateTo,
@@ -274,10 +288,36 @@ function MapActions({
             </motion.button>
           </motion.div>
           <AnimatePresence>
-            {AIResponse && (
-              <div className="flex justify-center p-2 text-text dark:text-text-dark">
-                <span>{AIResponse}</span>
-              </div>
+            {isNavigating && messages.length > 0 && (
+              <motion.div
+                layout
+                className="flex flex-col gap-4 w-full mt-1 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 overflow-y-auto overscroll-contain max-h-[55vh] sm:max-h-[60vh] md:max-h-[65vh] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              >
+                {messages.map((m, idx) => (
+                  <motion.div
+                    key={idx}
+                    layout
+                    className="flex flex-col gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, delay: idx * 0.02 }}
+                  >
+                    {/* User */}
+                    <div className="flex w-full">
+                      <div className="ml-auto max-w-[80%] rounded-lg bg-primary dark:bg-accent-dark text-white dark:text-text-dark px-3 py-2 text-sm shadow-sm break-words whitespace-pre-wrap">
+                        {m.prompt}
+                      </div>
+                    </div>
+                    {/* AI Response */}
+                    <div className="flex w-full">
+                      <div className="mr-auto max-w-[80%] rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 text-sm shadow-sm border border-gray-200 dark:border-gray-700 break-words whitespace-pre-wrap">
+                        {m.reply}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             )}
             {/* {showResults && (
               <motion.div
