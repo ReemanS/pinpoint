@@ -4,10 +4,10 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { searchLocations } from "@/services/mapbox";
-import { MAP_DEFAULTS } from "@/services/mapbox/config";
+import { getGeoResponse } from "@/services/geo";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
-import { Search } from "lucide-react";
+import { SendHorizontal } from "lucide-react";
 
 const slabo = Slabo_27px({
   weight: ["400"],
@@ -33,6 +33,10 @@ function MapActions({
   const [showResults, setShowResults] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [AIResponse, setAIResponse] = useState<string>("");
+  const [messages, setMessages] = useState<{ prompt: string; reply: string }[]>(
+    []
+  );
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -49,17 +53,19 @@ function MapActions({
   const performSearch = async (query: string) => {
     try {
       setIsSearching(true);
-      const results = await searchLocations({
+      const response = await searchLocations({
         query,
         center,
         limit: 8,
         types: "country,region,postcode,district,place,locality,neighborhood",
       });
 
-      setSearchResults(results);
-      if (results.length > 0) {
-        setShowResults(true);
+      if (response.status === "success") {
+        setSearchResults(response.data || []);
+        setShowResults((response.data?.length || 0) > 0);
       } else {
+        console.error("Search error:", response.error);
+        setSearchResults([]);
         setShowResults(false);
       }
     } catch (error) {
@@ -84,7 +90,6 @@ function MapActions({
 
   // Handle result selection
   const handleResultSelect = (result: SearchResult) => {
-    setIsNavigating(true);
     const [lng, lat] = result.coordinates;
     if (result.bbox) {
       // If bbox exists, display it and fit the map to it
@@ -98,6 +103,47 @@ function MapActions({
 
     setShowResults(false);
     setSearchValue(result.name);
+  };
+
+  const handleAIResponse = async (prompt: string) => {
+    setIsSearching(true);
+    try {
+      const trimmedPrompt = prompt.trim();
+      const response = await getGeoResponse(prompt);
+
+      if (response.status === "success") {
+        setIsNavigating(true);
+        setAIResponse(response.data?.reply || "No reply available.");
+        if (response.data?.reply) {
+          // append to messages history
+          setMessages((prev) => [
+            ...prev,
+            {
+              prompt: trimmedPrompt || "(empty)",
+              reply: response.data!.reply!,
+            },
+          ]);
+        }
+        if (response.data?.navigateTo) {
+          const location = await searchLocations({
+            query: response.data.navigateTo,
+            center,
+            limit: 1,
+            types:
+              "country,region,postcode,district,place,locality,neighborhood",
+          });
+          if (location.status === "success" && location.data?.[0]) {
+            handleResultSelect(location.data[0]);
+          }
+        }
+      } else {
+        console.log("Error:", response.error);
+      }
+    } catch (err) {
+      console.error("Failed to get geo response:", err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -188,7 +234,7 @@ function MapActions({
 
         <motion.form
           layout
-          onSubmit={handleSubmit}
+          // onSubmit={handleSubmit}
           className="flex flex-col gap-2 relative w-full"
         >
           <motion.div
@@ -200,7 +246,7 @@ function MapActions({
             }}
             className="flex sm:flex-row gap-2"
           >
-            <motion.input
+            <motion.textarea
               layout
               transition={{
                 type: "spring",
@@ -208,24 +254,71 @@ function MapActions({
                 damping: 35,
               }}
               layoutId="search-input"
-              type="text"
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2"
-              placeholder="Search for a location..."
+              rows={1}
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex-grow outline-none focus:outline-2 focus:outline-primary dark:focus:outline-primary-dark focus:outline-offset-2 resize-none overflow-hidden"
+              placeholder="Ask something geography-related..."
               value={searchValue}
-              onChange={handleSearchChange}
-              aria-label="Search for a location"
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchValue(value);
+                if (value.length < 3) {
+                  setSearchResults([]);
+                  setShowResults(false);
+                }
+              }}
+              onInput={(e) => {
+                const t = e.currentTarget as HTMLTextAreaElement;
+                t.style.height = "auto";
+                t.style.height = `${t.scrollHeight}px`;
+              }}
+              aria-label="Ask something geography related"
             />
             <motion.button
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="bg-accent text-background p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer"
+              className="bg-accent text-gray-200 p-2 rounded-lg shadow-md hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity border-none cursor-pointer max-h-min"
               disabled={isSearching}
+              onClick={(e) => {
+                e.preventDefault();
+                handleAIResponse(searchValue);
+              }}
             >
-              <Search />
+              <SendHorizontal />
             </motion.button>
           </motion.div>
           <AnimatePresence>
-            {showResults && (
+            {isNavigating && messages.length > 0 && (
+              <motion.div
+                layout
+                className="flex flex-col gap-4 w-full mt-1 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 overflow-y-auto overscroll-contain max-h-[55vh] sm:max-h-[60vh] md:max-h-[65vh] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              >
+                {messages.map((m, idx) => (
+                  <motion.div
+                    key={idx}
+                    layout
+                    className="flex flex-col gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, delay: idx * 0.02 }}
+                  >
+                    {/* User */}
+                    <div className="flex w-full">
+                      <div className="ml-auto max-w-[80%] rounded-lg bg-primary dark:bg-accent-dark text-white dark:text-text-dark px-3 py-2 text-sm shadow-sm break-words whitespace-pre-wrap">
+                        {m.prompt}
+                      </div>
+                    </div>
+                    {/* AI Response */}
+                    <div className="flex w-full">
+                      <div className="mr-auto max-w-[80%] rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 text-sm shadow-sm border border-gray-200 dark:border-gray-700 break-words whitespace-pre-wrap">
+                        {m.reply}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+            {/* {showResults && (
               <motion.div
                 layout
                 className={`overflow-y-auto overflow-x-clip ${
@@ -264,7 +357,7 @@ function MapActions({
                   ))
                 )}
               </motion.div>
-            )}
+            )} */}
           </AnimatePresence>
         </motion.form>
       </motion.div>

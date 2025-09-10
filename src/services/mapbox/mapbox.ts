@@ -1,4 +1,6 @@
+import { z } from "zod";
 import type { SearchResult } from "@/types/search";
+import { ApiResponse } from "@/services/api";
 import {
   GEOCODING_API_URL,
   DEFAULT_SEARCH_CONFIG,
@@ -12,36 +14,40 @@ interface SearchParams {
   types?: string;
 }
 
-// Mapbox API response interfaces
-interface MapboxGeometry {
-  type: string;
-  coordinates: [number, number];
-}
+// Mapbox API response schemas
+const MapboxGeometry = z.object({
+  type: z.string(),
+  coordinates: z.tuple([z.number(), z.number()]),
+});
 
-interface MapboxFeature {
-  id: string;
-  type: string;
-  properties: MapboxFeatureProperties;
-  geometry: MapboxGeometry;
-}
+const MapboxFeatureProperties = z.object({
+  mapbox_id: z.string().optional(),
+  name: z.string().optional(),
+  place_formatted: z.string().optional(),
+  full_address: z.string().optional(),
+  feature_type: z.string().optional(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+  coordinates: z
+    .object({
+      longitude: z.number(),
+      latitude: z.number(),
+    })
+    .optional(),
+});
 
-interface MapboxFeatureProperties {
-  mapbox_id?: string;
-  name?: string;
-  place_formatted?: string;
-  full_address?: string;
-  feature_type?: string;
-  bbox?: [number, number, number, number];
-  coordinates?: {
-    longitude: number;
-    latitude: number;
-  };
-}
+const MapboxFeature = z.object({
+  id: z.string(),
+  type: z.string(),
+  properties: MapboxFeatureProperties,
+  geometry: MapboxGeometry,
+});
 
-interface MapboxGeocodingResponse {
-  type: string;
-  features: MapboxFeature[];
-}
+const MapboxGeocodingResponse = z.object({
+  type: z.string(),
+  features: z.array(MapboxFeature),
+});
+
+type MapboxFeature = z.infer<typeof MapboxFeature>;
 
 /**
  * Performs geocoding search using Mapbox Geocoding v6 API
@@ -51,9 +57,16 @@ export async function searchLocations({
   center,
   limit = DEFAULT_SEARCH_CONFIG.limit,
   types = DEFAULT_SEARCH_CONFIG.types,
-}: SearchParams): Promise<SearchResult[]> {
+}: SearchParams): Promise<ApiResponse<SearchResult[]>> {
   try {
     const accessToken = getMapboxToken();
+
+    if (!accessToken) {
+      return {
+        status: "error",
+        error: "Mapbox access token is not configured",
+      };
+    }
 
     const searchParams = new URLSearchParams({
       q: query,
@@ -71,24 +84,37 @@ export async function searchLocations({
       throw new Error(`Search failed with status: ${response.status}`);
     }
 
-    const data: MapboxGeocodingResponse = await response.json();
+    const rawData = await response.json();
 
-    if (data.features && Array.isArray(data.features)) {
-      return data.features.map(transformFeatureToSearchResult);
+    try {
+      const data = MapboxGeocodingResponse.parse(rawData);
+      const results = data.features.map(transformFeatureToSearchResult);
+
+      return {
+        status: "success",
+        data: results,
+      };
+    } catch {
+      return {
+        status: "error",
+        error: "Invalid response format from Mapbox API",
+      };
     }
-
-    return [];
   } catch (error) {
-    console.error("Search error:", error);
-
     if (
       error instanceof Error &&
       error.message.includes("NEXT_PUBLIC_MAPBOX_TOKEN")
     ) {
-      console.warn("Missing NEXT_PUBLIC_MAPBOX_TOKEN; cannot perform search.");
+      return {
+        status: "error",
+        error: "Mapbox access token is not configured",
+      };
     }
 
-    return [];
+    return {
+      status: "error",
+      error: error instanceof Error ? error.message : "Unknown search error",
+    };
   }
 }
 
