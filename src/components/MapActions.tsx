@@ -90,7 +90,6 @@ function MapActions({
 
   // Handle result selection
   const handleResultSelect = (result: SearchResult) => {
-    setIsNavigating(true);
     const [lng, lat] = result.coordinates;
     if (result.bbox) {
       // If bbox exists, display it and fit the map to it
@@ -113,7 +112,7 @@ function MapActions({
       const response = await getGeoResponse(prompt);
 
       if (response.status === "success") {
-        console.log(response.data);
+        setIsNavigating(true);
         setAIResponse(response.data?.reply || "No reply available.");
         if (response.data?.reply) {
           // append to messages history
