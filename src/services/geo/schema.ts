@@ -37,7 +37,7 @@ export const BaseGeoResponseDataSchema = z.object({
     ),
 });
 
-// Extended schema with metadata added by the service
+// Extended schema with metadata
 export const GeoResponseDataSchema = BaseGeoResponseDataSchema.extend({
   model: z.string().optional(),
   requestId: z.string().optional(),

@@ -6,12 +6,19 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import MapActions from "./MapActions";
 import { getMapboxToken, MAP_DEFAULTS } from "../services/mapbox/config";
+import type { GeoResponseData } from "@/services/geo/schema";
+
+type GetGeoResponseAction = (prompt: string) => Promise<GeoResponseData>;
 
 // Globe defaults
 const GLOBE_CENTER = MAP_DEFAULTS.center;
 const GLOBE_ZOOM = MAP_DEFAULTS.zoom;
 
-function MapContainer() {
+function MapContainer({
+  getGeoResponseAction,
+}: {
+  getGeoResponseAction: GetGeoResponseAction;
+}) {
   const mapRef = useRef<mapboxgl.Map>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -218,6 +225,7 @@ function MapContainer() {
         zoom={zoom}
         onFlyTo={handleFlyTo}
         onDisplayBoundingBox={handleDisplayBoundingBox}
+        getGeoResponseAction={getGeoResponseAction}
       />
     </div>
   );

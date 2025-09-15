@@ -4,10 +4,10 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { searchLocations } from "@/services/mapbox";
-import { getGeoResponse } from "@/services/geo";
 import type { SearchResult } from "@/types/search";
 import { Slabo_27px } from "next/font/google";
 import { SendHorizontal } from "lucide-react";
+import type { GeoResponseData } from "@/services/geo/schema";
 
 const slabo = Slabo_27px({
   weight: ["400"],
@@ -20,6 +20,7 @@ interface MapActionsProps {
   zoom: number;
   onFlyTo: (coordinates: [number, number], zoom?: number) => void;
   onDisplayBoundingBox: (bbox: [number, number, number, number] | null) => void;
+  getGeoResponseAction: (prompt: string) => Promise<GeoResponseData>;
 }
 
 function MapActions({
@@ -27,6 +28,7 @@ function MapActions({
   zoom,
   onFlyTo,
   onDisplayBoundingBox,
+  getGeoResponseAction,
 }: MapActionsProps) {
   const [searchValue, setSearchValue] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -38,14 +40,14 @@ function MapActions({
     []
   );
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchValue(value);
-    if (value.length < 3) {
-      setSearchResults([]);
-      setShowResults(false);
-    }
-  };
+  // const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value;
+  //   setSearchValue(value);
+  //   if (value.length < 3) {
+  //     setSearchResults([]);
+  //     setShowResults(false);
+  //   }
+  // };
 
   // Geocoding v6 forward
   // i was gonna used the Search Box API but turns out that's for
@@ -53,21 +55,15 @@ function MapActions({
   const performSearch = async (query: string) => {
     try {
       setIsSearching(true);
-      const response = await searchLocations({
+      const results = await searchLocations({
         query,
         center,
         limit: 8,
         types: "country,region,postcode,district,place,locality,neighborhood",
       });
 
-      if (response.status === "success") {
-        setSearchResults(response.data || []);
-        setShowResults((response.data?.length || 0) > 0);
-      } else {
-        console.error("Search error:", response.error);
-        setSearchResults([]);
-        setShowResults(false);
-      }
+      setSearchResults(results || []);
+      setShowResults((results?.length || 0) > 0);
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults([]);
@@ -109,35 +105,30 @@ function MapActions({
     setIsSearching(true);
     try {
       const trimmedPrompt = prompt.trim();
-      const response = await getGeoResponse(prompt);
+      const data = await getGeoResponseAction(trimmedPrompt);
 
-      if (response.status === "success") {
-        setIsNavigating(true);
-        setAIResponse(response.data?.reply || "No reply available.");
-        if (response.data?.reply) {
-          // append to messages history
-          setMessages((prev) => [
-            ...prev,
-            {
-              prompt: trimmedPrompt || "(empty)",
-              reply: response.data!.reply!,
-            },
-          ]);
+      setIsNavigating(true);
+      setAIResponse(data.reply || "No reply available.");
+      if (data.reply) {
+        // append to messages history
+        setMessages((prev) => [
+          ...prev,
+          {
+            prompt: trimmedPrompt || "(empty)",
+            reply: data.reply,
+          },
+        ]);
+      }
+      if (data.navigateTo) {
+        const locationResults = await searchLocations({
+          query: data.navigateTo,
+          center,
+          limit: 1,
+          types: "country,region,postcode,district,place,locality,neighborhood",
+        });
+        if (locationResults?.[0]) {
+          handleResultSelect(locationResults[0]);
         }
-        if (response.data?.navigateTo) {
-          const location = await searchLocations({
-            query: response.data.navigateTo,
-            center,
-            limit: 1,
-            types:
-              "country,region,postcode,district,place,locality,neighborhood",
-          });
-          if (location.status === "success" && location.data?.[0]) {
-            handleResultSelect(location.data[0]);
-          }
-        }
-      } else {
-        console.log("Error:", response.error);
       }
     } catch (err) {
       console.error("Failed to get geo response:", err);
